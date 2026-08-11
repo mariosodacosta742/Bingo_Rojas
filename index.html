@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎲 Bingo · Voz femenina en español</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      min-height: 100vh;
+      background: #0a0a0a;
+      color: #f4f4f4;
+      font-family: 'Space Grotesk', sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 20px 12px 40px;
+    }
+    .wrap {
+      max-width: 920px;
+      width: 100%;
+    }
+    h1 {
+      font-family: 'Bungee', cursive;
+      text-align: center;
+      font-size: clamp(24px, 5vw, 38px);
+      letter-spacing: 2px;
+      color: #f2c53d;
+      text-shadow: 0 3px 0 #a02b22;
+      margin: 0 0 20px;
+    }
+
+    .balls-row {
+      display: flex;
+      justify-content: center;
+      gap: clamp(10px, 3vw, 24px);
+      padding: 16px 10px 20px;
+      background: #121212;
+      border-radius: 40px;
+      margin-bottom: 24px;
+      border: 1px solid #2c2c2c;
+      flex-wrap: wrap;
+    }
+    .ball {
+      width: clamp(64px, 10vw, 90px);
+      height: clamp(64px, 10vw, 90px);
+      border-radius: 50%;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 0 #0f0f0f;
+      flex-shrink: 0;
+    }
+    .ball .ring {
+      position: absolute;
+      inset: 6%;
+      border-radius: 50%;
+      border: 4px solid var(--ballcolor, #666);
+      opacity: 0.6;
+    }
+    .ball .inner {
+      width: 64%;
+      height: 64%;
+      border-radius: 50%;
+      background: #f8f8f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #0a0a0a;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
+    }
+    .ball .letter {
+      font-family: 'Bungee', cursive;
+      font-size: clamp(13px, 1.8vw, 18px);
+      color: var(--ballcolor, #555);
+      line-height: 1;
+    }
+    .ball .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: clamp(16px, 2.2vw, 22px);
+      line-height: 1.1;
+      margin-top: -2px;
+    }
+    .ball.empty .inner .num { opacity: 0.25; }
+    .ball.pop { transform: scale(1.12); filter: brightness(1.2); }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    button {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      border: none;
+      border-radius: 30px;
+      padding: 12px 24px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      letter-spacing: 0.3px;
+      background: #252525;
+      color: #eee;
+      border: 1px solid #3a3a3a;
+    }
+    button:active { transform: scale(0.96); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.5); }
+    .btn-main {
+      background: #d6382e;
+      color: white;
+      border-color: #b02a21;
+    }
+    .btn-main:hover:not(:disabled) { background: #e64a3f; transform: scale(1.02); }
+    .btn-alt {
+      background: #f2c53d;
+      color: #141414;
+      border-color: #dbaa2a;
+    }
+    .btn-alt:hover:not(:disabled) { background: #fad15a; }
+    .btn-ghost {
+      background: #222;
+      border-color: #444;
+    }
+    .btn-ghost:hover:not(:disabled) { border-color: #f2c53d; color: #f2c53d; }
+
+    .status {
+      text-align: center;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      color: #b0b0b0;
+      background: #161616;
+      padding: 10px 12px;
+      border-radius: 60px;
+      margin-bottom: 20px;
+      border: 1px solid #2a2a2a;
+    }
+
+    .board {
+      background: #0c0c0c;
+      border-radius: 20px;
+      padding: 16px 12px;
+      border: 1px solid #262626;
+    }
+    .board-row {
+      display: grid;
+      grid-template-columns: 48px repeat(15, 1fr);
+      gap: 5px;
+      margin-bottom: 5px;
+    }
+    .board-row:last-child { margin-bottom: 0; }
+
+    .letter-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bungee', cursive;
+      font-size: clamp(16px, 2.2vw, 24px);
+      border-radius: 12px;
+      color: #fff;
+      text-shadow: 0 2px 0 rgba(0,0,0,0.3);
+    }
+    .letter-cell.B { background: #1e7fd6; }
+    .letter-cell.I { background: #d6382e; }
+    .letter-cell.N { background: #e0e0e0; color: #141414; }
+    .letter-cell.G { background: #2f9e44; }
+    .letter-cell.O { background: #f2c53d; color: #141414; }
+
+    .num-cell {
+      background: #2a2a2a;
+      color: #eaeaea;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: clamp(13px, 1.9vw, 18px);
+      border-radius: 10px;
+      cursor: pointer;
+      aspect-ratio: 1/1;
+      transition: all 0.12s ease;
+      border: 1px solid #3a3a3a;
+    }
+    .num-cell:hover { background: #3d3d3d; transform: scale(1.02); }
+    .num-cell.called {
+      color: #fff;
+      transform: scale(0.92);
+      border-color: rgba(255,255,255,0.5);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2);
+    }
+    .num-cell.called.B { background: #1e7fd6; }
+    .num-cell.called.I { background: #d6382e; }
+    .num-cell.called.N { background: #9a9a9a; color: #141414; }
+    .num-cell.called.G { background: #2f9e44; }
+    .num-cell.called.O { background: #f2c53d; color: #141414; }
+
+    .footer-note {
+      text-align: center;
+      font-size: 13px;
+      color: #6d6d6d;
+      margin-top: 24px;
+      border-top: 1px solid #1e1e1e;
+      padding-top: 18px;
+    }
+
+    @media (max-width: 600px) {
+      .board-row { grid-template-columns: 34px repeat(15, 1fr); gap: 3px; }
+      .letter-cell { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎤 BINGO · BALOTA</h1>
+
+  <div class="balls-row" id="ballsRow"></div>
+
+  <div class="controls">
+    <button class="btn-main" id="drawBtn">🎲 Sacar balota</button>
+    <button class="btn-alt" id="autoBtn">▶ Auto: apagado</button>
+    <button class="btn-ghost" id="resetBtn">⟳ Reiniciar</button>
+  </div>
+
+  <div class="status" id="status">0 de 75 · toca un número para marcarlo</div>
+
+  <div class="board" id="board"></div>
+  <div class="footer-note">🔊 Voz femenina en español · cada balota se anuncia con tono cálido y amigable</div>
+</div>
+
+<script>
+  (function() {
+    const LETTERS = ['B','I','N','G','O'];
+    const RANGES = { B:[1,15], I:[16,30], N:[31,45], G:[46,60], O:[61,75] };
+    const COLORS = { B:'#1e7fd6', I:'#d6382e', N:'#bdbdbd', G:'#2f9e44', O:'#f2c53d' };
+
+    const ballsRow = document.getElementById('ballsRow');
+    const board = document.getElementById('board');
+    const drawBtn = document.getElementById('drawBtn');
+    const autoBtn = document.getElementById('autoBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const status = document.getElementById('status');
+
+    let called = new Set();
+    let pool = [];
+    let autoTimer = null;
+    let selectedVoice = null;
+
+    // ----- SÍNTESIS DE VOZ: FEMENINA EN ESPAÑOL -----
+    function initVoice() {
+      if (!window.speechSynthesis) return;
+      const voices = window.speechSynthesis.getVoices();
+      
+      // Lista de nombres de voces femeninas en español (comunes en diferentes sistemas)
+      const femaleSpanishNames = [
+        'mónica', 'monica', 'paulina', 'maría', 'maria', 'carla', 
+        'laura', 'ana', 'sofía', 'sofia', 'valentina', 'camila',
+        'isabela', 'luisa', 'femenina', 'female', 'mujer'
+      ];
+      
+      // Buscar voz femenina en español
+      let preferred = voices.find(v => 
+        v.lang.startsWith('es') && 
+        femaleSpanishNames.some(name => v.name.toLowerCase().includes(name))
+      );
+      
+      // Si no hay, buscar cualquier voz en español (podría ser neutra)
+      if (!preferred) {
+        preferred = voices.find(v => v.lang.startsWith('es'));
+      }
+      
+      // Si no hay voces en español, buscar voz femenina en inglés que pueda hablar español
+      if (!preferred) {
+        const femaleEnglish = voices.find(v => 
+          v.lang.startsWith('en') && 
+          (v.name.toLowerCase().includes('samantha') || 
+           v.name.toLowerCase().includes('victoria') ||
+           v.name.toLowerCase().includes('female'))
+        );
+        if (femaleEnglish) preferred = femaleEnglish;
+      }
+      
+      // Si aún no hay, usar la primera voz disponible
+      if (!preferred && voices.length > 0) {
+        preferred = voices[0];
+      }
+      
+      selectedVoice = preferred || null;
+      
+      // Mostrar en consola qué voz se está usando (útil para depuración)
+      if (selectedVoice) {
+        console.log('🔊 Voz seleccionada:', selectedVoice.name, '(idioma:', selectedVoice.lang, ')');
+      } else {
+        console.warn('⚠️ No se encontró ninguna voz disponible');
+      }
+    }
+
+    // Inicializar voces cuando estén disponibles
+    if (window.speechSynthesis) {
+      // Primera carga
+      window.speechSynthesis.getVoices();
+      initVoice();
+      
+      // Escuchar cambios en las voces (importante para algunos navegadores)
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+        initVoice();
+      };
+      
+      // Carga adicional después de un pequeño retraso
+      setTimeout(initVoice, 500);
+    }
+
+    function speakBallot(letter, number) {
+      if (!window.speechSynthesis) return;
+      
+      // Cancelar voces anteriores para evitar solapamiento
+      window.speechSynthesis.cancel();
+
+      // Frase natural y amigable: "B 12" con tono agradable
+      const phrase = `${letter} ${number}`;
+      const utterance = new SpeechSynthesisUtterance(phrase);
+      utterance.lang = 'es-ES';
+      utterance.rate = 0.85;        // más pausado, claro
+      utterance.pitch = 1.1;        // un poco más agudo, más amigable
+      utterance.volume = 1;
+
+      // Asignar voz seleccionada (femenina en español si es posible)
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      } else {
+        // Si no hay voz seleccionada, intentar buscar una en el momento
+        const voices = window.speechSynthesis.getVoices();
+        const femaleSpanish = voices.find(v => 
+          v.lang.startsWith('es') && 
+          (v.name.toLowerCase().includes('mónica') || 
+           v.name.toLowerCase().includes('monica') ||
+           v.name.toLowerCase().includes('paulina') ||
+           v.name.toLowerCase().includes('maría') ||
+           v.name.toLowerCase().includes('maria') ||
+           v.name.toLowerCase().includes('femenina') ||
+           v.name.toLowerCase().includes('female'))
+        );
+        if (femaleSpanish) {
+          utterance.voice = femaleSpanish;
+          selectedVoice = femaleSpanish; // Guardar para futuras
+        } else {
+          // Si no hay femenina en español, usar cualquier voz en español
+          const anySpanish = voices.find(v => v.lang.startsWith('es'));
+          if (anySpanish) {
+            utterance.voice = anySpanish;
+            selectedVoice = anySpanish;
+          }
+        }
+      }
+
+      // Intentar hablar
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch (error) {
+        console.warn('Error al hablar:', error);
+      }
+    }
+
+    // ----- LÓGICA DEL JUEGO -----
+    function numberToLetter(n) {
+      for (const l of LETTERS) {
+        const [min, max] = RANGES[l];
+        if (n >= min && n <= max) return l;
+      }
+      return '';
+    }
+
+    function shuffled(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function resetPool() {
+      const nums = [];
+      for (let n = 1; n <= 75; n++) nums.push(n);
+      pool = shuffled(nums);
+    }
+
+    function buildBalls() {
+      ballsRow.innerHTML = '';
+      LETTERS.forEach(letter => {
+        const ball = document.createElement('div');
+        ball.className = 'ball empty';
+        ball.id = 'ball-' + letter;
+        ball.style.setProperty('--ballcolor', COLORS[letter]);
+        ball.innerHTML = `
+          <div class="ring"></div>
+          <div class="inner">
+            <span class="letter">${letter}</span>
+            <span class="num">--</span>
+          </div>`;
+        ballsRow.appendChild(ball);
+      });
+    }
+
+    function buildBoard() {
+      board.innerHTML = '';
+      LETTERS.forEach(letter => {
+        const [min, max] = RANGES[letter];
+        const row = document.createElement('div');
+        row.className = 'board-row';
+
+        const label = document.createElement('div');
+        label.className = 'letter-cell ' + letter;
+        label.textContent = letter;
+        row.appendChild(label);
+
+        for (let n = min; n <= max; n++) {
+          const cell = document.createElement('div');
+          cell.className = 'num-cell';
+          cell.textContent = n;
+          cell.dataset.num = n;
+          cell.dataset.letter = letter;
+          cell.addEventListener('click', () => toggleNumber(n, letter));
+          row.appendChild(cell);
+        }
+        board.appendChild(row);
+      });
+    }
+
+    function updateCellVisual(n, letter) {
+      const cell = board.querySelector(`.num-cell[data-num="${n}"]`);
+      if (!cell) return;
+      cell.classList.toggle('called', called.has(n));
+      if (called.has(n)) {
+        cell.classList.add(letter);
+      } else {
+        cell.classList.remove(letter);
+      }
+    }
+
+    function toggleNumber(n, letter) {
+      if (called.has(n)) {
+        called.delete(n);
+      } else {
+        called.add(n);
+      }
+      updateCellVisual(n, letter);
+      updateStatus();
+
+      if (called.has(n)) {
+        updateBall(letter, n);
+      } else {
+        const last = findLastCalledByLetter(letter);
+        if (last) {
+          updateBall(letter, last);
+        } else {
+          resetBall(letter);
+        }
+      }
+    }
+
+    function findLastCalledByLetter(letter) {
+      const [min, max] = RANGES[letter];
+      let last = null;
+      for (let n = min; n <= max; n++) {
+        if (called.has(n)) last = n;
+      }
+      return last;
+    }
+
+    function updateBall(letter, n) {
+      const ball = document.getElementById('ball-' + letter);
+      if (!ball) return;
+      ball.classList.remove('empty');
+      ball.querySelector('.num').textContent = n;
+      ball.classList.remove('pop');
+      void ball.offsetWidth;
+      ball.classList.add('pop');
+    }
+
+    function resetBall(letter) {
+      const ball = document.getElementById('ball-' + letter);
+      if (!ball) return;
+      ball.classList.add('empty');
+      ball.querySelector('.num').textContent = '--';
+      ball.classList.remove('pop');
+    }
+
+    function updateStatus() {
+      const total = called.size;
+      status.textContent = total + ' de 75 balotas cantadas · toca un número para marcarlo o desmarcarlo';
+      if (pool.length === 0 && total === 75) {
+        status.textContent = '🎉 ¡Todas las balotas cantadas! (75/75)';
+      }
+    }
+
+    // ----- ACCIÓN PRINCIPAL: sacar balota con VOZ -----
+    function drawNumber() {
+      if (pool.length === 0) {
+        drawBtn.disabled = true;
+        stopAuto();
+        status.textContent = '⛔ No quedan balotas en el pozo.';
+        return;
+      }
+      const n = pool.pop();
+      const letter = numberToLetter(n);
+      called.add(n);
+      updateCellVisual(n, letter);
+      updateBall(letter, n);
+      updateStatus();
+
+      // 🔊 ANUNCIAR CON VOZ FEMENINA EN ESPAÑOL
+      speakBallot(letter, n);
+
+      if (pool.length === 0) {
+        drawBtn.disabled = true;
+        stopAuto();
+        status.textContent = '🎯 Todas las balotas fueron cantadas (75/75)';
+      }
+    }
+
+    // ----- AUTO -----
+    function startAuto() {
+      if (autoTimer) return;
+      autoTimer = setInterval(() => {
+        if (pool.length === 0) {
+          stopAuto();
+          drawBtn.disabled = true;
+          status.textContent = '⏹️ Auto detenido · pozo vacío';
+          return;
+        }
+        drawNumber();
+      }, 2200);
+      autoBtn.textContent = '⏸️ Auto: encendido';
+    }
+
+    function stopAuto() {
+      clearInterval(autoTimer);
+      autoTimer = null;
+      autoBtn.textContent = '▶ Auto: apagado';
+    }
+
+    // ----- RESET -----
+    function resetAll() {
+      stopAuto();
+      called = new Set();
+      resetPool();
+      drawBtn.disabled = false;
+      buildBalls();
+      buildBoard();
+      document.querySelectorAll('.num-cell').forEach(cell => {
+        cell.classList.remove('called', 'B', 'I', 'N', 'G', 'O');
+      });
+      status.textContent = '0 de 75 balotas · reiniciado';
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    }
+
+    // ----- EVENTOS -----
+    drawBtn.addEventListener('click', drawNumber);
+    autoBtn.addEventListener('click', () => {
+      if (autoTimer) {
+        stopAuto();
+      } else {
+        startAuto();
+      }
+    });
+    resetBtn.addEventListener('click', resetAll);
+
+    // Inicializar
+    resetPool();
+    buildBalls();
+    buildBoard();
+    updateStatus();
+
+    // Asegurar voces
+    if (window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    }
+
+    // Mostrar información de voz en consola
+    console.log('🎤 Sistema de voz inicializado. Buscando voz femenina en español...');
+
+  })();
+</script>
+</body>
+</html>
